@@ -10,13 +10,13 @@
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  Highlander01HMI UC_V1j.py is distributed in the hope that it will be useful,
+#  Highlander01HMI UC_V1k.py is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Highlander01HMI UC_V1j.py.  If not, see <http://www.gnu.org/licenses/>.
+#  along with Highlander01HMI UC_V1k.py.  If not, see <http://www.gnu.org/licenses/>.
 
 import serial
 
@@ -69,8 +69,7 @@ class USBReadThread ( threading.Thread ):
     def run ( self ):
         print 'Start USB Thread.'
         usbport = '/dev/ttyUSB0'
-        MyUSB = serial.Serial(usbport, 115200, timeout=0.01)
-        
+        MyUSB = serial.Serial(usbport, 115200, timeout=0.005)
         #while True:
         global usbreadenable
         while usbreadenable:
@@ -92,7 +91,7 @@ class gcodethread ( threading.Thread ):
 
 	def run (self):
 		usbport = '/dev/ttyUSB0'
-		MyUSB = serial.Serial(usbport, 115200, timeout=0.01)
+		MyUSB = serial.Serial(usbport, 115200, timeout=0.005)
 		global usbreadenable
 		global gcodethreadenable
 		global gcodethreadrun
@@ -104,6 +103,7 @@ class gcodethread ( threading.Thread ):
 		stepr = 1
 		steptwocount = 0
 		stepfourcount = 0
+		steprfourcount = 0
 		while usbreadenable:
 			data = MyUSB.readline()
 			nextline = False
@@ -123,6 +123,7 @@ class gcodethread ( threading.Thread ):
 			if gcodethreadenable == False:
 				stepr = 1
 				steprtwocount = 0
+				steprfourcount = 0
 
 			if gcodethreadenable:
 				if gcodethreadrun:
@@ -177,21 +178,24 @@ class gcodethread ( threading.Thread ):
 								stepr = 1
 
 						if stepr == 4:
-							stepfourcount = stepfourcount + 1
-							print 'stepr = 4'
-							print 'wait until '#0'
+							steprfourcount = steprfourcount + 1
+							if steprfourcount == 1:
+								print 'stepr = 4'
+								print 'wait until pound0'
 							if data == '#0':
 								print 'no r n'
 								stepr = 1
-								stepfourcount = 0
+								steprfourcount = 0
 							if data == '#0\r\n':
 								print 'yes r n'
 								stepr = 1
-								stepfourcount = 0
-							if stepfourcount > 25:
+								steprfourcount = 0
+							if steprfourcount > 10:
+								print 'retry python send usb clear = #'
+								stringb = '#'
 								MyUSB.write(stringb)
-								
-
+								steprfourcount = 0
+						
 						#time.sleep(0.1)
 						if len(stringa)<1:
 							gcodethreadrun=False
@@ -1128,7 +1132,7 @@ class MainWindow(wx.Frame):
     #--------------Add USB control
     def USBOn(self,event):
         usbport = '/dev/ttyUSB0'
-        self.MyUSB1 = serial.Serial(usbport, 115200, timeout=0.01)
+        self.MyUSB1 = serial.Serial(usbport, 115200, timeout=0.005)
         global usbreadenable
         if usbreadenable:
             usbreadenable = False
