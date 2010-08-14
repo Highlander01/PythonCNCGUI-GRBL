@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#
+#  Modified Version 20100814
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -39,9 +39,11 @@ import time
 import math
 
 gcodethreadenable = False
+gcodethreadmanual = False
 gcodethreadrun = False
 gcodethreadstep = False
 gcodereset = False
+gcodestring = '#'
 redrawrun = False
 redrawtext = ''
 drawz = False
@@ -62,47 +64,35 @@ viewozm = -40.0
 viewozp = 40.0
 
 
-#Routine~~~~~~~~~~~~~~~~~~~~~~~~~~~ USB Read Thread ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-class USBReadThread ( threading.Thread ):
-
-    def run ( self ):
-        print 'Start USB Thread.'
-        usbport = '/dev/ttyUSB0'
-        MyUSB = serial.Serial(usbport, 115200, timeout=0.005)
-        #while True:
-        global usbreadenable
-        while usbreadenable:
-		data = MyUSB.readline()
-		print data
-		#time.sleep(0.3)
-
-        print 'This should never print we are intentionally in while loop above.'
-
 #Routine~~~~~~~~~~~~~~~~~~~~~~~~~~~ GCode Run Thread ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class gcodethread ( threading.Thread ):
+class usbgcodethread ( threading.Thread ):
 
 	def __init__(self, lineno, text ):
 		threading.Thread.__init__(self)
-		print 'gcodethread init'
+		print 'usbgcodethread init'
 		self.lineno = lineno
 		self.text = text
 
 	def run (self):
 		usbport = '/dev/ttyUSB0'
 		MyUSB = serial.Serial(usbport, 115200, timeout=0.005)
-		global usbreadenable
+		global gcodereset
 		global gcodethreadenable
+		global gcodethreadmanual
 		global gcodethreadrun
 		global gcodethreadstep
-		print 'gcodethread run'
+		global gcodestring
 		global usbreadenable
-		global gcodereset
 		step = 1
-		stepr = 1
 		steptwocount = 0
 		stepfourcount = 0
+		stepm = 1
+		stepmpass = 1
+		stepmtwocount = 0
+		stepmfourcount = 0
+		stepr = 1
+		steprtwocount = 0
 		steprfourcount = 0
 		while usbreadenable:
 			data = MyUSB.readline()
@@ -110,11 +100,8 @@ class gcodethread ( threading.Thread ):
 			if len(data)>0:
 				print data
 				if data == 'ok\r\n':
-					print 'ceg read ok'
+					print 'Python read ok'
 					nextline = True
-			#time.sleep(0.1)
-			#if nextline == True:
-			#	time.sleep(0.1)
 
 			if gcodereset == True:
 				self.lineno = 0
@@ -131,6 +118,7 @@ class gcodethread ( threading.Thread ):
 						stringb = ''
 						stringalen = len(stringa)
 						if stepr == 1:
+							print '------------'
 							stringa = self.text.GetLineText(self.lineno)
 							stringb = ''
 							stringalen = len(stringa)
@@ -140,22 +128,18 @@ class gcodethread ( threading.Thread ):
 									if stringa[index] != ' ':
 										stringb = stringb + stringa[index]
 									index = index +1
-							print len(stringb)
 							stringr = '?' + str(len(stringb)) + '\r\n'
-							print stringr
+							print 'Python sent:' + stringr
 							stringb = stringb + '?'
 							print stringb
 							MyUSB.write(stringb)
 							stepr = 2
-							print 'step = 1 done'
 						if stepr == 2:
 							steprtwocount = steprtwocount + 1
-							print steprtwocount
 							if len(data)>0:
 								print data
-								print 'good or bad?'
 								if data == stringr:
-									print 'yes! data = stringr'
+									print 'good! sent length = return'
 									stringb = '*'
 									MyUSB.write(stringb)
 									print stringb
@@ -168,7 +152,7 @@ class gcodethread ( threading.Thread ):
 									stepr = 4
 
 							if steprtwocount > 25:
-								print 'steprtwocount > 25'
+								print 'No Arduino Response 25, Python Send Cancel #'
 								stringb = '#'
 								MyUSB.write(stringb)
 								stepr = 4
@@ -180,8 +164,7 @@ class gcodethread ( threading.Thread ):
 						if stepr == 4:
 							steprfourcount = steprfourcount + 1
 							if steprfourcount == 1:
-								print 'stepr = 4'
-								print 'wait until pound0'
+								print 'Wait until Arduino sends #0'
 							if data == '#0':
 								print 'no r n'
 								stepr = 1
@@ -196,7 +179,6 @@ class gcodethread ( threading.Thread ):
 								MyUSB.write(stringb)
 								steprfourcount = 0
 						
-						#time.sleep(0.1)
 						if len(stringa)<1:
 							gcodethreadrun=False
 							gcodethreadenable=False
@@ -210,7 +192,6 @@ class gcodethread ( threading.Thread ):
 				if gcodethreadstep:
 					if step == 1:
 						print '------------'
-						print 'Step 1'
 						stringa = self.text.GetLineText(self.lineno)
 						stringb = ''
 						stringalen = len(stringa)
@@ -220,45 +201,42 @@ class gcodethread ( threading.Thread ):
 								if stringa[index] != ' ':
 									stringb = stringb + stringa[index]
 								index = index +1
-						print len(stringb)
 						stringr = '?' + str(len(stringb)) + '\r\n'
-						#stringr = '?'  + str(len(stringb))
-						print stringr
-						print 'hi'
+						print 'Python sent:' + stringr
 						stringb = stringb + '?'
 						print stringb
 						MyUSB.write(stringb)
 						step = 2
-						print 'step 2'
 					if step == 2:
 						steptwocount = steptwocount + 1
 						if len(data)>0:
 							if data == stringr:
-								print 'yes! data = stringr'
+								print 'good! sent length = return'
 								stringb = '*'
 								MyUSB.write(stringb)
 								print stringb
 								self.lineno = self.lineno + 1
 			      	        			gcodethreadstep = False
 							if data != stringr:
-								print 'bad! data = stringr'
+								print 'bad! data not= stringr'
 								stringb = '#'
 								MyUSB.write(stringb)
 								step = 4
 								print 'step 4'
 
 						if steptwocount > 25:
-							print 'python send usb clear = #'
+							print 'No Arduino Response 25, Python Send Cancel #'
 							stringb = '#'
 							MyUSB.write(stringb)
 							step = 4
-							print 'step 4'
 							steptwocount = 0
 					if step == 3:
 
 	      	        			gcodethreadstep = False
 
 					if step == 4:
+						if steprfourcount == 1:
+							print 'Wait until Arduino sends #0'
 						stepfourcount = stepfourcount + 1
 						if data == '#0':
 							print 'no r n'
@@ -282,7 +260,88 @@ class gcodethread ( threading.Thread ):
                 				gcodethreadenable=False
                 				self.lineno = 0
 
-		print 'gcodethread has ended'
+				if gcodethreadmanual == False:
+					stepm = 1
+					stepmpass = 1
+					stepmtwocount = 0
+					stepmfourcount = 0
+
+				if gcodethreadmanual:
+					if stepm == 1:
+						print '------------'
+						stringa = gcodestring
+						stringb = ''
+						stringalen = len(stringa)
+						if stringalen > 2:
+							index = 0
+							while index < stringalen:
+								if stringa[index] != ' ':
+									stringb = stringb + stringa[index]
+								index = index +1
+						stringr = '?' + str(len(stringb)) + '\r\n'
+						print 'Python characters sent:' + stringr
+						stringb = stringb + '?'
+						print stringb
+						MyUSB.write(stringb)
+						stepm = 2
+					if stepm == 2:
+						stepmtwocount = stepmtwocount + 1
+						if len(data)>0:
+							if data == stringr:
+								print 'good! data = stringr'
+								stringb = '*'
+								MyUSB.write(stringb)
+								print stringb
+								if stepmpass == 2:
+									gcodethreadmanual = False
+									nextline = False
+								if stepmpass == 1:
+					      	        			gcodestring = 'G90'
+										stepm = 3
+										stepmpass = 2
+							if data != stringr:
+								print 'bad! data not= stringr'
+								stringb = '#'
+								MyUSB.write(stringb)
+								stepm = 4
+
+						if stepmtwocount > 25:
+							print 'No Arduino Response 25, Python Send Cancel #'
+							stringb = '#'
+							MyUSB.write(stringb)
+							stepm = 4
+							stepmtwocount = 0
+
+					if stepm == 3:
+	      	        			if nextline == True:
+							stepm = 1
+							nextline = False
+
+					if stepm == 4:
+						stepmfourcount = stepmfourcount + 1
+						if data == '#0':
+							print 'no r n'
+		      	        			gcodethreadmanual = False
+						if data == '#0\r\n':
+							print 'yes r n'
+		      	        			gcodethreadmanual = False
+						if stepfourcount > 10:
+							print 'retry python send usb clear = #'
+							stringb = '#'
+							MyUSB.write(stringb)
+							if stepmfourcount > 25:
+			      	        			gcodethreadmanual = False
+								print 'step 4 clear failed'
+							
+
+
+					#time.sleep(0.1)
+                			if len(stringa)<2:
+                				gcodethreadrun=False
+                				gcodethreadenable=False
+                				self.lineno = 0
+
+		print 'usbgcodethread has ended'
 
 #Routine~~~~~~~~~~~~~~~~~~~~~~~~~~~ Canvas Base ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -963,8 +1022,6 @@ class MainWindow(wx.Frame):
 
 	usbbtnon = wx.Button(panel1, -1, 'USB On', pos=(10,50), size=(80,25))
         self.Bind(wx.EVT_BUTTON, self.USBOn, usbbtnon)
-        usbbtnread = wx.Button(panel1, -1, 'USB Read', pos=(115,50), size=(80,25))
-        self.Bind(wx.EVT_BUTTON, self.usbcncread, usbbtnread)
         usbbtnwrite = wx.Button(panel1, -1, 'USB Write', pos=(195,50), size=(80,25))
         self.Bind(wx.EVT_BUTTON, self.usbcncwrite, usbbtnwrite)
 
@@ -1138,7 +1195,7 @@ class MainWindow(wx.Frame):
             usbreadenable = False
         elif True:
             usbreadenable = True
-            gcodethread(self.gcodelineno,self.gcodetc1).start()
+            usbgcodethread(self.gcodelineno,self.gcodetc1).start()
         
 
     def usbcncread(self,event):
@@ -1181,44 +1238,46 @@ class MainWindow(wx.Frame):
 
     #--------------code for Manual Move plus button
     def manualmoveplus(self,event):
+	global gcodethreadenable
+	global gcodethreadmanual
+	global gcodestring
 	movedist = float(self.manualmovedisttc.GetValue())
 	if self.aradiox.GetValue():
-		string = 'G91 X' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 X' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if self.aradioy.GetValue():
-		string = 'G91 Y' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 Y' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if self.aradioz.GetValue():
-		string = 'G91 Z' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 Z' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if movedist > 0.0 or movedist < 100.0:
-		self.MyUSB1.write(string)
+		gcodethreadenable = True
+		gcodethreadmanual = True
+		gcodestring = string
+		print 'in range'
 	elif True:
 		print 'Move distance is out of range.'
-	string = 'G90*'
-	print string
-	self.MyUSB1.write(string)
+
+
+
 
     #--------------code for Manual Move minus button
     def manualmoveminus(self,event):
+	global gcodethreadenable
+	global gcodethreadmanual
+	global gcodestring
 	movedist = float(self.manualmovedisttc.GetValue())
 	if self.aradiox.GetValue():
-		string = 'G91 X-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 X-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if self.aradioy.GetValue():
-		string = 'G91 Y-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 Y-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if self.aradioz.GetValue():
-		string = 'G91 Z-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue()) +'*'
-		print string
+		string = 'G91 Z-' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
 	if movedist > 0.0 or movedist < 100.0:
-		self.MyUSB1.write(string)
+		gcodethreadenable = True
+		gcodethreadmanual = True
+		gcodestring = string
+		print 'in range'
 	elif True:
 		print 'Move distance is out of range.'
-	string = 'G90*'
-	print string
-	self.MyUSB1.write(string)
-
 
 
     #--------------code for gcodestep button
@@ -1236,7 +1295,6 @@ class MainWindow(wx.Frame):
         global gcodethreadrun
         gcodethreadenable = True
         gcodethreadrun = True
-        #gcodethread(self.gcodelineno,self.gcodetc1).start()
 
     #--------------code for gcodepause button
     def gcodepause(self,event):
