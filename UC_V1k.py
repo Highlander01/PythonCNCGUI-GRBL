@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100814
+#  Modified Version 20100815
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -99,9 +99,15 @@ class usbgcodethread ( threading.Thread ):
 			nextline = False
 			if len(data)>0:
 				print data
-				if data == 'ok\r\n':
-					print 'Python read ok'
+				#Bandaid, not always getting clean ok back, so just going with letter o for now
+				#if data == 'ok\r\n':
+				#	print 'Python read ok'
+				#	nextline = True
+				if data[0] == 'o':
+					print 'Python read o'
 					nextline = True
+				if data == 'B59\r\n':
+					print 'Buffer Full'
 
 			if gcodereset == True:
 				self.lineno = 0
