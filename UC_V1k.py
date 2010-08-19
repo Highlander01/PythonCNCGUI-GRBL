@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100815
+#  Modified Version 20100818
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -62,7 +62,8 @@ viewoym = -30.0
 viewoyp = 30.0
 viewozm = -40.0
 viewozp = 40.0
-
+zoominenable = False
+zoomoutenable = False
 
 #Routine~~~~~~~~~~~~~~~~~~~~~~~~~~~ GCode Run Thread ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -456,6 +457,8 @@ class drawgcode(MyCanvasBase):
 	global viewoyp
 	global viewozm
 	global viewozp
+	global zoominenable
+	global zoomoutenable
 	gcode = '00'
 	tempjunk = 0.0
 	icord = 0.0
@@ -493,8 +496,13 @@ class drawgcode(MyCanvasBase):
         #clear the screen and the depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        #glOrtho(viewoxm, viewoxp, viewoym, viewoyp, viewozm, viewozp)
+        if zoominenable == True:
+            glScalef(1.1,1.1,1.1)
+            zoominenable = False
 
+        if zoomoutenable == True:
+            glScalef(0.9,0.9,0.9)
+            zoomoutenable = False
 
         global drawrotdegno
         global doxrot        
@@ -1126,6 +1134,10 @@ class MainWindow(wx.Frame):
         drawbtnzoomin = wx.Button(panel4, -1, 'Zoom In', pos=(10,130), size=(110,25))
         self.Bind(wx.EVT_BUTTON, self.zoominr, drawbtnzoomin)
 
+        drawbtnzoomout = wx.Button(panel4, -1, 'Zoom Out', pos=(120,130), size=(110,25))
+        self.Bind(wx.EVT_BUTTON, self.zoomoutr, drawbtnzoomout)
+
+
         #-------------- something with layout
         self.SetAutoLayout(True)
         self.SetSizer(box)
@@ -1428,22 +1440,17 @@ class MainWindow(wx.Frame):
         self.mydrawgcode.OnDraw()
 
     def zoominr(self,event):
+	global zoominenable
 	global drawrotdegno
 	drawrotdegno = 0.0
-	global viewoxm
-	global viewoxp
-	global viewoym
-	global viewoyp
-	global viewozm
-	global viewozp
-	viewoxm = viewoxm * .9
-	print 'viewoxm'
-	print viewoxm
-	viewoxp = viewoxp * .9
-	viewoym = viewoym * .9
-	viewoyp = viewoyp * .9
-	viewozm = viewozm * .9
-	viewozp = viewozp * .9
+	zoominenable = True
+	self.mydrawgcode.OnDraw()
+
+    def zoomoutr(self,event):
+	global drawrotdegno
+	global zoomoutenable
+	drawrotdegno = 0.0
+	zoomoutenable = True
 	self.mydrawgcode.OnDraw()
 
 
