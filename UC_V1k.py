@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100818
+#  Modified Version 20100819
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -56,6 +56,10 @@ doyrot = False
 dozrot = False
 drawrotdegstr = '90.0'
 drawrotdegno = 90
+panleftenable = False
+panrightenable = False
+panupenable = False
+pandownenable = False
 viewoxm = -40.0
 viewoxp = 20.0
 viewoym = -30.0
@@ -449,6 +453,10 @@ class drawgcode(MyCanvasBase):
 
   def OnDraw(self):
 
+	global panleftenable
+	global panrightenable
+	global panupenable
+	global pandownenable
         global redrawrun
         global redrawtext
 	global viewoxm
@@ -495,6 +503,22 @@ class drawgcode(MyCanvasBase):
 
         #clear the screen and the depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        if panleftenable == True:
+            glTranslatef(-5.0,0.0,0.0)
+            panleftenable = False
+
+        if panrightenable == True:
+            glTranslatef(5.0,0.0,0.0)
+            panrightenable = False
+
+        if panupenable == True:
+            glTranslatef(0.0,5.0,0.0)
+            panupenable = False
+
+        if pandownenable == True:
+            glTranslatef(0.0,-5.0,0.0)
+            pandownenable = False
 
         if zoominenable == True:
             glScalef(1.1,1.1,1.1)
@@ -1131,12 +1155,31 @@ class MainWindow(wx.Frame):
         drawbtnzp = wx.Button(panel4, -1, 'Z+', pos=(175,90), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawzrotpr, drawbtnzp)
 
-        drawbtnzoomin = wx.Button(panel4, -1, 'Zoom In', pos=(10,130), size=(110,25))
+        self.tczoompercent = wx.TextCtrl(panel4, -1, pos=(10,130), size=(40,25))
+
+        stzoom = wx.StaticText(panel4, -1, '% Zoom', pos=(55,135))
+
+        drawbtnzoomin = wx.Button(panel4, -1, 'In', pos=(120,130), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.zoominr, drawbtnzoomin)
 
-        drawbtnzoomout = wx.Button(panel4, -1, 'Zoom Out', pos=(120,130), size=(110,25))
+        drawbtnzoomout = wx.Button(panel4, -1, 'Out', pos=(175,130), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.zoomoutr, drawbtnzoomout)
 
+        self.tcpanmm = wx.TextCtrl(panel4, -1, pos=(10,160), size=(40,25))
+
+        stpan = wx.StaticText(panel4, -1, 'mm Pan', pos=(55,165))
+
+        drawbtnpanleft = wx.Button(panel4, -1, 'Left', pos=(120,160), size=(55,25))
+        self.Bind(wx.EVT_BUTTON, self.panleftr, drawbtnpanleft)
+
+        drawbtnpanright = wx.Button(panel4, -1, 'Right', pos=(175,160), size=(55,25))
+        self.Bind(wx.EVT_BUTTON, self.panrightr, drawbtnpanright)
+
+        drawbtnpanup = wx.Button(panel4, -1, 'Up', pos=(230,160), size=(55,25))
+        self.Bind(wx.EVT_BUTTON, self.panupr, drawbtnpanup)
+
+        drawbtnpandown = wx.Button(panel4, -1, 'Down', pos=(285,160), size=(55,25))
+        self.Bind(wx.EVT_BUTTON, self.pandownr, drawbtnpandown)
 
         #-------------- something with layout
         self.SetAutoLayout(True)
@@ -1438,6 +1481,34 @@ class MainWindow(wx.Frame):
         global drawmouse
         drawmouse = False
         self.mydrawgcode.OnDraw()
+
+    def panleftr(self,event):
+	global panleftenable
+	global drawrotdegno
+	drawrotdegno = 0.0
+	panleftenable = True
+	self.mydrawgcode.OnDraw()
+
+    def panrightr(self,event):
+	global panrightenable
+	global drawrotdegno
+	drawrotdegno = 0.0
+	panrightenable = True
+	self.mydrawgcode.OnDraw()
+
+    def panupr(self,event):
+	global panupenable
+	global drawrotdegno
+	drawrotdegno = 0.0
+	panupenable = True
+	self.mydrawgcode.OnDraw()
+
+    def pandownr(self,event):
+	global pandownenable
+	global drawrotdegno
+	drawrotdegno = 0.0
+	pandownenable = True
+	self.mydrawgcode.OnDraw()
 
     def zoominr(self,event):
 	global zoominenable
