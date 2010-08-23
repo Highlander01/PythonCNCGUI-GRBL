@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100819
+#  Modified Version 20100822
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -60,6 +60,7 @@ panleftenable = False
 panrightenable = False
 panupenable = False
 pandownenable = False
+panmm = 5
 viewoxm = -40.0
 viewoxp = 20.0
 viewoym = -30.0
@@ -68,6 +69,7 @@ viewozm = -40.0
 viewozp = 40.0
 zoominenable = False
 zoomoutenable = False
+zoompercent = 125.0
 
 #Routine~~~~~~~~~~~~~~~~~~~~~~~~~~~ GCode Run Thread ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -457,6 +459,7 @@ class drawgcode(MyCanvasBase):
 	global panrightenable
 	global panupenable
 	global pandownenable
+	global panmm
         global redrawrun
         global redrawtext
 	global viewoxm
@@ -467,6 +470,7 @@ class drawgcode(MyCanvasBase):
 	global viewozp
 	global zoominenable
 	global zoomoutenable
+	global zoompercent
 	gcode = '00'
 	tempjunk = 0.0
 	icord = 0.0
@@ -505,27 +509,31 @@ class drawgcode(MyCanvasBase):
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         if panleftenable == True:
-            glTranslatef(-5.0,0.0,0.0)
+            pan = panmm * -1
+            glTranslatef(pan,0.0,0.0)
             panleftenable = False
 
         if panrightenable == True:
-            glTranslatef(5.0,0.0,0.0)
+            glTranslatef(panmm,0.0,0.0)
             panrightenable = False
 
         if panupenable == True:
-            glTranslatef(0.0,5.0,0.0)
+            glTranslatef(0.0,panmm,0.0)
             panupenable = False
 
         if pandownenable == True:
-            glTranslatef(0.0,-5.0,0.0)
+            pan = panmm * -1
+            glTranslatef(0.0,pan,0.0)
             pandownenable = False
 
         if zoominenable == True:
-            glScalef(1.1,1.1,1.1)
+            zoom = zoompercent/100.0
+            glScalef(zoom,zoom,zoom)
             zoominenable = False
 
         if zoomoutenable == True:
-            glScalef(0.9,0.9,0.9)
+            zoom = 100.0/zoompercent
+            glScalef(zoom,zoom,zoom)
             zoomoutenable = False
 
         global drawrotdegno
@@ -1143,16 +1151,16 @@ class MainWindow(wx.Frame):
 
         usbst1 = wx.StaticText(panel4, -1, 'Degrees', pos=(55,55))
 
-        drawbtnym = wx.Button(panel4, -1, 'Y-', pos=(120,50), size=(55,25))
+        drawbtnym = wx.Button(panel4, -1, 'Y-', pos=(120,40), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawyrotmr, drawbtnym)
 
-        drawbtnyp = wx.Button(panel4, -1, 'Y+', pos=(175,50), size=(55,25))
+        drawbtnyp = wx.Button(panel4, -1, 'Y+', pos=(175,40), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawyrotpr, drawbtnyp)
 
-        drawbtnzm = wx.Button(panel4, -1, 'Z-', pos=(120,90), size=(55,25))
+        drawbtnzm = wx.Button(panel4, -1, 'Z-', pos=(120,70), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawzrotmr, drawbtnzm)
 
-        drawbtnzp = wx.Button(panel4, -1, 'Z+', pos=(175,90), size=(55,25))
+        drawbtnzp = wx.Button(panel4, -1, 'Z+', pos=(175,70), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawzrotpr, drawbtnzp)
 
         self.tczoompercent = wx.TextCtrl(panel4, -1, pos=(10,130), size=(40,25))
@@ -1392,6 +1400,8 @@ class MainWindow(wx.Frame):
     def drawxrotmr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         drawrotdegstr = '-' + drawrotdegstr
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)
@@ -1408,6 +1418,8 @@ class MainWindow(wx.Frame):
     def drawxrotpr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)
         global doxrot
@@ -1423,6 +1435,8 @@ class MainWindow(wx.Frame):
     def drawyrotmr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         drawrotdegstr = '-' + drawrotdegstr
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)        
@@ -1439,6 +1453,8 @@ class MainWindow(wx.Frame):
     def drawyrotpr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)        
         global doxrot
@@ -1454,6 +1470,8 @@ class MainWindow(wx.Frame):
     def drawzrotmr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         drawrotdegstr = '-' + drawrotdegstr
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)        
@@ -1470,6 +1488,8 @@ class MainWindow(wx.Frame):
     def drawzrotpr(self,event):
         global drawrotdegstr
         drawrotdegstr = self.drawtxtrotdeg.GetValue()
+        if drawrotdegstr == '':
+            drawrotdegstr = '10'
         global drawrotdegno
         drawrotdegno = float(drawrotdegstr)        
         global doxrot
@@ -1486,6 +1506,11 @@ class MainWindow(wx.Frame):
 	global panleftenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+        global panmm
+        panmmstr = self.tcpanmm.GetValue()
+        if panmmstr == '':
+            panmmstr = '10'
+        panmm = float(panmmstr)
 	panleftenable = True
 	self.mydrawgcode.OnDraw()
 
@@ -1493,6 +1518,11 @@ class MainWindow(wx.Frame):
 	global panrightenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+        global panmm
+        panmmstr = self.tcpanmm.GetValue()
+        if panmmstr == '':
+            panmmstr = '10'
+        panmm = float(panmmstr)
 	panrightenable = True
 	self.mydrawgcode.OnDraw()
 
@@ -1500,6 +1530,11 @@ class MainWindow(wx.Frame):
 	global panupenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+        global panmm
+        panmmstr = self.tcpanmm.GetValue()
+        if panmmstr == '':
+            panmmstr = '10'
+        panmm = float(panmmstr)
 	panupenable = True
 	self.mydrawgcode.OnDraw()
 
@@ -1507,20 +1542,35 @@ class MainWindow(wx.Frame):
 	global pandownenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+        global panmm
+        panmmstr = self.tcpanmm.GetValue()
+        if panmmstr == '':
+            panmmstr = '10'
+        panmm = float(panmmstr)
 	pandownenable = True
 	self.mydrawgcode.OnDraw()
 
     def zoominr(self,event):
-	global zoominenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global zoominenable
+        global zoompercent
+        zoompercentstr = self.tczoompercent.GetValue()
+        if zoompercentstr == '':
+            zoompercentstr = '125'
+        zoompercent = float(zoompercentstr)
 	zoominenable = True
 	self.mydrawgcode.OnDraw()
 
     def zoomoutr(self,event):
 	global drawrotdegno
-	global zoomoutenable
 	drawrotdegno = 0.0
+	global zoomoutenable
+        global zoompercent
+        zoompercentstr = self.tczoompercent.GetValue()
+        if zoompercentstr == '':
+            zoompercentstr = '125'
+        zoompercent = float(zoompercentstr)
 	zoomoutenable = True
 	self.mydrawgcode.OnDraw()
 
