@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100822
+#  Modified Version 20100827
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -511,67 +511,86 @@ class drawgcode(MyCanvasBase):
         if panleftenable == True:
             pan = panmm * -1
             glTranslatef(pan,0.0,0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             panleftenable = False
 
         if panrightenable == True:
             glTranslatef(panmm,0.0,0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             panrightenable = False
 
         if panupenable == True:
             glTranslatef(0.0,panmm,0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             panupenable = False
 
         if pandownenable == True:
             pan = panmm * -1
             glTranslatef(0.0,pan,0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             pandownenable = False
 
         if zoominenable == True:
             zoom = zoompercent/100.0
             glScalef(zoom,zoom,zoom)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             zoominenable = False
 
         if zoomoutenable == True:
             zoom = 100.0/zoompercent
             glScalef(zoom,zoom,zoom)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
             zoomoutenable = False
 
         global drawrotdegno
         global doxrot        
         if doxrot:
             glRotatef(drawrotdegno, 1.0, 0.0, 0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
 
         global doyrot        
         if doyrot:
             glRotatef(drawrotdegno, 0.0, 1.0, 0.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
 
         global dozrot        
         if dozrot:
             glRotatef(drawrotdegno, 0.0, 0.0, 1.0)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            glCallList(1)
 
-	# Draw x-axis line.
-	
-	glBegin( GL_LINES )
-	glColor3f( 1, 0, 0 )	
-	glVertex3f( 0, 0, 0 )
-	glVertex3f( 50, 0, 0 )
-	glEnd( )
-
-	# Draw y-axis line.
-	glColor3f( 0, 1, 0 )
-	glBegin( GL_LINES )
-	glVertex3f( 0, 0, 0 )
-	glVertex3f( 0, 50, 0 )
-	glEnd( )
-
-	# Draw z-axis line.
-	glColor3f( 0, 0, 1 )
-	glBegin( GL_LINES )
-	glVertex3f( 0, 0, 0 )
-	glVertex3f( 0, 0, 50 )
-	glEnd( )
-        
+    
         if redrawrun:
+		#Use glNewList and glEndList calls to put drawing into a list
+		#Benefit is that this time consuming gcode file processing is only done once
+		#After this only very fast glClear and glCallList calls are required to do zooms, pans, & rotates
+		glNewList(1, GL_COMPILE)
+		# Draw x-axis line.
+		glBegin( GL_LINES )
+		glColor3f( 1, 0, 0 )	
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 50, 0, 0 )
+		glEnd( )
+		# Draw y-axis line.
+		glColor3f( 0, 1, 0 )
+		glBegin( GL_LINES )
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 0, 50, 0 )
+		glEnd( )
+		# Draw z-axis line.
+		glColor3f( 0, 0, 1 )
+		glBegin( GL_LINES )
+		glVertex3f( 0, 0, 0 )
+		glVertex3f( 0, 0, 50 )
+		glEnd( )
 		lineno = 1
 		index = 0
 		strno = ''
@@ -1000,6 +1019,9 @@ class drawgcode(MyCanvasBase):
 			string = redrawtext.GetLineText(lineno)
 			if len(string) < 2:
 				processfileok = False
+		glEndList()
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+		glCallList(1)
 
 		#glColor3f( 0, 0, 1 )
 		#glBegin( GL_LINES )
@@ -1413,6 +1435,8 @@ class MainWindow(wx.Frame):
         dozrot = False
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def drawxrotpr(self,event):
@@ -1430,6 +1454,8 @@ class MainWindow(wx.Frame):
         dozrot = False
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def drawyrotmr(self,event):
@@ -1448,6 +1474,8 @@ class MainWindow(wx.Frame):
         dozrot = False
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def drawyrotpr(self,event):
@@ -1465,6 +1493,8 @@ class MainWindow(wx.Frame):
         dozrot = False
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def drawzrotmr(self,event):
@@ -1483,6 +1513,8 @@ class MainWindow(wx.Frame):
         dozrot = True
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def drawzrotpr(self,event):
@@ -1500,12 +1532,16 @@ class MainWindow(wx.Frame):
         dozrot = True
         global drawmouse
         drawmouse = False
+	global redrawrun
+	redrawrun = False
         self.mydrawgcode.OnDraw()
 
     def panleftr(self,event):
 	global panleftenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
         global panmm
         panmmstr = self.tcpanmm.GetValue()
         if panmmstr == '':
@@ -1518,6 +1554,8 @@ class MainWindow(wx.Frame):
 	global panrightenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
         global panmm
         panmmstr = self.tcpanmm.GetValue()
         if panmmstr == '':
@@ -1530,6 +1568,8 @@ class MainWindow(wx.Frame):
 	global panupenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
         global panmm
         panmmstr = self.tcpanmm.GetValue()
         if panmmstr == '':
@@ -1542,6 +1582,8 @@ class MainWindow(wx.Frame):
 	global pandownenable
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
         global panmm
         panmmstr = self.tcpanmm.GetValue()
         if panmmstr == '':
@@ -1553,6 +1595,8 @@ class MainWindow(wx.Frame):
     def zoominr(self,event):
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
 	global zoominenable
         global zoompercent
         zoompercentstr = self.tczoompercent.GetValue()
@@ -1565,6 +1609,8 @@ class MainWindow(wx.Frame):
     def zoomoutr(self,event):
 	global drawrotdegno
 	drawrotdegno = 0.0
+	global redrawrun
+	redrawrun = False
 	global zoomoutenable
         global zoompercent
         zoompercentstr = self.tczoompercent.GetValue()
