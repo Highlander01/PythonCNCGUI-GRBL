@@ -97,7 +97,9 @@ class usbgcodethread ( threading.Thread ):
 		stepm = 1
 		stepmpass = 1
 		stepmtwocount = 0
+		stepmthreecount = 0
 		stepmfourcount = 0
+		stepmelevencount = 0
 		stepr = 1
 		steprtwocount = 0
 		steprfourcount = 0
@@ -277,9 +279,12 @@ class usbgcodethread ( threading.Thread ):
 					stepm = 1
 					stepmpass = 1
 					stepmtwocount = 0
+					stepmthreecount = 0 
 					stepmfourcount = 0
 
 				if gcodethreadmanual:
+					#send data ex G91 X01 F100?
+					#? asks arduino t send back a char count
 					if stepm == 1:
 						print '------------'
 						stringa = gcodestring
@@ -297,56 +302,69 @@ class usbgcodethread ( threading.Thread ):
 						print stringb
 						MyUSB.write(stringb)
 						stepm = 2
+					#Evaluate Arduino char count response sent back
+					#If Char count sent back matches count sent then send execute char *
+					#If Char counts are not = send buffer clear char #
+					#If there is no response send buffer clear char #
 					if stepm == 2:
 						stepmtwocount = stepmtwocount + 1
 						if len(data)>0:
-							if data == stringr:
-								print 'good! data = stringr'
-								stringb = '*'
-								MyUSB.write(stringb)
-								print stringb
-								if stepmpass == 2:
-									gcodethreadmanual = False
+							if stepmtwocount < 25:
+								if data == stringr:
+									print 'good! data = stringr'
+									stringb = '*'
+									MyUSB.write(stringb)
+									print 'Python sent execute char:' + stringb
+									stepm = 3
 									nextline = False
-								if stepmpass == 1:
-					      	        			gcodestring = 'G90'
-										stepm = 3
-										stepmpass = 2
 							if data != stringr:
 								print 'bad! data not= stringr'
 								stringb = '#'
 								MyUSB.write(stringb)
-								stepm = 4
+								print 'Python sent buffer clear: ' + stringb 
+								stepm = 11
 
 						if stepmtwocount > 25:
 							print 'No Arduino Response 25, Python Send Cancel #'
 							stringb = '#'
 							MyUSB.write(stringb)
-							stepm = 4
+							print 'Python sent buffer clear: ' + stringb 
+							stepm = 11
 							stepmtwocount = 0
-
+					#Get Execute response back from Arduino
 					if stepm == 3:
+						stepmthreecount = stepmthreecount + 1
 	      	        			if nextline == True:
-							stepm = 1
+							stepm = 4
 							nextline = False
-
+						if stepmthreecount > 25:
+							stringb = '*'
+							MyUSB.write(stringb)
+							print 'Python sent execute char:' + stringb
+							stepmthreecount = 0
+							
 					if stepm == 4:
-						stepmfourcount = stepmfourcount + 1
+						if stepmpass == 2:
+							gcodethreadmanual = False
+							nextline = False
+						if stepmpass == 1:
+		      	        			gcodestring = 'G90'
+							stepm = 1
+							stepmpass = 2
+
+					#Wait for buffer cleared response #0 from Arduino
+					if stepm == 11:
+						stepmelevencount = stepmelevencount + 1
 						if data == '#0':
-							print 'no r n'
-		      	        			gcodethreadmanual = False
+							#Note this data comes with no /r/n
+							stepm = 1
 						if data == '#0\r\n':
-							print 'yes r n'
-		      	        			gcodethreadmanual = False
-						if stepfourcount > 10:
-							print 'retry python send usb clear = #'
+							stepm = 1
+						if stepmelevencount > 1000:
+							print '11retry python send usb clear = #'
 							stringb = '#'
 							MyUSB.write(stringb)
-							if stepmfourcount > 25:
-			      	        			gcodethreadmanual = False
-								print 'step 4 clear failed'
-							
-
+							stepfourcount = 0
 
 					#time.sleep(0.1)
                 			if len(stringa)<2:
