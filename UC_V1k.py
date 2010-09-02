@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100827
+#  Modified Version 20100901
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -597,12 +597,25 @@ class drawgcode(MyCanvasBase):
 		glVertex3f( 0, 0, 0 )
 		glVertex3f( 50, 0, 0 )
 		glEnd( )
+		# Draw number 50 on x-axis line.
+		glRasterPos2f(50,-5)
+		glutInit()
+		A = 53
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, A)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 48)
+	
 		# Draw y-axis line.
 		glColor3f( 0, 1, 0 )
 		glBegin( GL_LINES )
 		glVertex3f( 0, 0, 0 )
 		glVertex3f( 0, 50, 0 )
 		glEnd( )
+		glRasterPos2f(-5,50)
+		glutInit()
+		A = 53
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, A)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, 48)
+
 		# Draw z-axis line.
 		glColor3f( 0, 0, 1 )
 		glBegin( GL_LINES )
@@ -1096,7 +1109,7 @@ class MainWindow(wx.Frame):
         panel1.SetBackgroundColour("GREY")
         #panel2.SetBackgroundColour("RED")
         panel3.SetBackgroundColour("RED")
-        panel4.SetBackgroundColour("BLUE")
+        panel4.SetBackgroundColour("BROWN")
 
         #--------------panel 1 vbox1 - Upper Left Corner of Frame - Buttons etc.
         vbox1 = wx.BoxSizer(wx.VERTICAL)
@@ -1125,7 +1138,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.manualmoveminus, abtnminus)
         abtnplus = wx.Button(panel1, -1, 'Move +', pos=(90,120), size=(75,25))
         self.Bind(wx.EVT_BUTTON, self.manualmoveplus, abtnplus)
-        self.manualmovedisttc = wx.TextCtrl(panel1, -1, pos=(170,120), size=(40,25))
+        self.manualmovedisttc = wx.TextCtrl(panel1, -1, "0", pos=(170,120), size=(40,25))
         astmoveunits = wx.StaticText(panel1, -1, 'Units mm', pos=(215,125))
         #alist = ['continuous', '5mm', '1mm', '.5mm', '.1mm', '.05mm', '.01mm']
         #self.alistbox = wx.ListBox(panel1, -1, (65,120), (120,25), alist, wx.LB_SINGLE)
@@ -1187,7 +1200,7 @@ class MainWindow(wx.Frame):
         drawbtnmouse = wx.Button(panel4, -1, 'Mouse', pos=(230,10), size=(110,25))
         self.Bind(wx.EVT_BUTTON, self.drawmouser, drawbtnmouse)
 
-        self.drawtxtrotdeg = wx.TextCtrl(panel4, -1, pos=(10,50), size=(40,25))
+        self.drawtxtrotdeg = wx.TextCtrl(panel4, -1, "20", pos=(10,50), size=(40,25))
 
         usbst1 = wx.StaticText(panel4, -1, 'Degrees', pos=(55,55))
 
@@ -1203,7 +1216,7 @@ class MainWindow(wx.Frame):
         drawbtnzp = wx.Button(panel4, -1, 'Z+', pos=(175,70), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.drawzrotpr, drawbtnzp)
 
-        self.tczoompercent = wx.TextCtrl(panel4, -1, pos=(10,130), size=(40,25))
+        self.tczoompercent = wx.TextCtrl(panel4, -1, "110", pos=(10,130), size=(40,25))
 
         stzoom = wx.StaticText(panel4, -1, '% Zoom', pos=(55,135))
 
@@ -1213,7 +1226,7 @@ class MainWindow(wx.Frame):
         drawbtnzoomout = wx.Button(panel4, -1, 'Out', pos=(175,130), size=(55,25))
         self.Bind(wx.EVT_BUTTON, self.zoomoutr, drawbtnzoomout)
 
-        self.tcpanmm = wx.TextCtrl(panel4, -1, pos=(10,160), size=(40,25))
+        self.tcpanmm = wx.TextCtrl(panel4, -1, "5", pos=(10,160), size=(40,25))
 
         stpan = wx.StaticText(panel4, -1, 'mm Pan', pos=(55,165))
 
@@ -1351,19 +1364,22 @@ class MainWindow(wx.Frame):
 	global gcodethreadmanual
 	global gcodestring
 	movedist = float(self.manualmovedisttc.GetValue())
-	if self.aradiox.GetValue():
-		string = 'G91 X' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
-	if self.aradioy.GetValue():
-		string = 'G91 Y' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
-	if self.aradioz.GetValue():
-		string = 'G91 Z' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
-	if movedist > 0.0 or movedist < 100.0:
+
+	if movedist >= 0.0 and movedist <= 100.0:
 		gcodethreadenable = True
 		gcodethreadmanual = True
-		gcodestring = string
 		print 'in range'
-	elif True:
+		if self.aradiox.GetValue():
+			string = 'G91 X' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
+		if self.aradioy.GetValue():
+			string = 'G91 Y' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
+		if self.aradioz.GetValue():
+			string = 'G91 Z' + str(movedist) + ' F' + str(self.asliderjspd.GetValue())
+		gcodestring = string
+	if movedist < 0.0 or movedist > 100.0:
 		print 'Move distance is out of range.'
+		self.manualmovedisttc.SetValue("0")
+		
 
 
 
