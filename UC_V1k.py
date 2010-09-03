@@ -44,6 +44,7 @@ gcodethreadrun = False
 gcodethreadstep = False
 gcodereset = False
 gcodestring = '#'
+introcube = True
 redrawrun = False
 redrawtext = ''
 drawz = False
@@ -489,6 +490,7 @@ class drawgcode(MyCanvasBase):
 	global zoominenable
 	global zoomoutenable
 	global zoompercent
+	global introcube
 	gcode = '00'
 	tempjunk = 0.0
 	icord = 0.0
@@ -591,6 +593,81 @@ class drawgcode(MyCanvasBase):
 		#Benefit is that this time consuming gcode file processing is only done once
 		#After this only very fast glClear and glCallList calls are required to do zooms, pans, & rotates
 		glNewList(1, GL_COMPILE)
+		
+		#introduction code draws cube one time
+		if introcube == True:
+			# Start Drawing The Cube
+			glBegin(GL_QUADS)
+  
+			# Set The Color To Blue
+			glColor3f(0.0,10.0,0.0)
+			# Top Right Of The Quad (Top)
+			glVertex3f( 10.0, 5.0,-10.0)
+			# Top Left Of The Quad (Top)
+			glVertex3f(-10.0, 5.0,-10.0)
+			# Bottom Left Of The Quad (Top)
+			glVertex3f(-10.0, 5.0, 10.0)
+			# Bottom Right Of The Quad (Top)
+			glVertex3f( 10, 5.0, 10)
+ 
+			# Set The Color To Orange
+			glColor3f(10,5.0,0.0)
+			# Top Right Of The Quad (Bottom)
+			glVertex3f( 10,-5.0, 10)
+			# Top Left Of The Quad (Bottom)
+			glVertex3f(-10,-5.0, 10)
+			# Bottom Left Of The Quad (Bottom)
+			glVertex3f(-10,-5.0,-10)
+			# Bottom Right Of The Quad (Bottom)
+			glVertex3f( 10,-5.0,-10)
+ 
+			# Set The Color To Red
+			glColor3f(10,0.0,0.0)
+			# Top Right Of The Quad (Front)
+			glVertex3f( 10, 10, 5.0)
+			# Top Left Of The Quad (Front)
+			glVertex3f(-10, 10, 5.0)
+			# Bottom Left Of The Quad (Front)
+			glVertex3f(-10,-10, 5.0)
+			# Bottom Right Of The Quad (Front)
+			glVertex3f( 10,-10, 5.0)
+ 
+			# Set The Color To Yellow
+			glColor3f(10,10,0.0)
+			# Bottom Left Of The Quad (Back)
+			glVertex3f( 10,-10,-5.0)
+			# Bottom Right Of The Quad (Back)
+			glVertex3f(-10,-10,-5.0)
+			# Top Right Of The Quad (Back)
+			glVertex3f(-10, 10,-5.0)
+			# Top Left Of The Quad (Back)
+			glVertex3f( 10, 10,-5.0)
+ 
+			# Set The Color To Blue
+			glColor3f(0.0,0.0,10)
+			# Top Right Of The Quad (Left)
+			glVertex3f(-5.0, 10, 10)
+			# Top Left Of The Quad (Left)
+			glVertex3f(-5.0, 10,-10)
+			# Bottom Left Of The Quad (Left)
+			glVertex3f(-5.0,-10,-10)
+			# Bottom Right Of The Quad (Left)
+			glVertex3f(-5.0,-10, 10)
+ 
+			# Set The Color To Violet
+			glColor3f(10,0.0,10)
+			# Top Right Of The Quad (Right)
+			glVertex3f( 5.0, 10,-10)
+			# Top Left Of The Quad (Right)
+			glVertex3f( 5.0, 10, 10)
+			# Bottom Left Of The Quad (Right)
+			glVertex3f( 5.0,-10, 10)
+			# Bottom Right Of The Quad (Right)
+			glVertex3f( 5.0,-10,-10)
+			# Done Drawing The Quad
+ 			glEnd()
+			introcube = False
+
 		# Draw x-axis line.
 		glBegin( GL_LINES )
 		glColor3f( 1, 0, 0 )	
@@ -1259,6 +1336,7 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnOpen, menuitem) # here comes the event-handler
         # Save
         menuitem = filemenu.Append(-1, "&Save", "Information about this program")
+        self.Bind(wx.EVT_MENU, self.OnSave, menuitem) # here comes the event-handler
         # About
         menuitem = filemenu.Append(-1, "&About", "Information about this program")
         self.Bind(wx.EVT_MENU, self.OnAbout, menuitem) # here comes the event-handler
@@ -1289,19 +1367,29 @@ class MainWindow(wx.Frame):
 
     #--------------Open a File
     def OnOpen(self,event):
-        filenameo = askopenfilename()
-        print filenameo
-        fin = open(filenameo, "r")
-        string = fin.read()
-        fin.close()
-        self.gcodestr = string
-        self.gcodetc1.WriteText(string)
-        print string
+		global introcube
+		introcube = False
+		self.gcodetc1.Clear()
+		filenameo = askopenfilename()
+		print filenameo
+		fin = open(filenameo, "r")
+		string = fin.read()
+		fin.close()
+		self.gcodestr = string
+		self.gcodetc1.WriteText(string)
+		print string
+		self.drawtest(self)
+
+    def OnSave(self,event):
+		filename = asksaveasfilename()
+		if filename:
+			alltext = self.gcodetc1.GetValue()
+			open(filename, 'w').write(alltext)
 
 
     def OnAbout(self,event):
-        message = "A sample editor\n in wxPython"
-        caption = "About Sample Editor"
+        message = "Highlander01HMI is a GNU free Python HMI/GUI for use with Simen GRBL CNC software http://github.com/Highlander01/Highlander01HMI"
+        caption = "About Highlander01HMI"
         wx.MessageBox(message, caption, wx.OK)
 
 
