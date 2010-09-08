@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 #
 #  My first attempt at GNU Follows:
-#  Modified Version 20100905
+#  Modified Version 20100907
 #  Copyright (c) 2010 Craig Gooder
 #
 #  Highlander01HMI UC_V1k.py is free software: you can redistribute it and/or modify
@@ -1398,8 +1398,7 @@ class MainWindow(wx.Frame):
 		global usbwritestring
 		global usbwriteenable
 		usbwritestring = self.usbtc1.GetValue()
-		usbwritenable = True
-
+		usbwriteenable = True
 
 	######-----------End of Add USB control
 
